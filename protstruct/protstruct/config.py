@@ -4,24 +4,26 @@ the generation of a dataset and the learning problem.
 """
 
 from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-PDB_DIR = '' # where to keep downloaded PDB files
-DSSP_DIR = '' # where to keep generated DSSP outputs
+import os
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+PDB_DIR = os.path.join( ROOT_DIR, 'data', 'pdb' ) # downloaded PDB files location
+DSSP_DIR = os.path.join( ROOT_DIR, 'data', 'dssp' ) # location of generated DSSP outputs
 
 DSSP = 'mkdssp' # dssp executable
 
 class SSConfig(object):
     """
-    Configs for the Secondary Structure prediction problem.
+    Configs for the Secondary Structure data generation and prediction problem.
     """
 
     pass
 
 class SAConfig(object):
     """
-    Configs for the Solvent Accessibility prediction problem.
+    Configs for the Solvent Accessibility data generation and prediction problem.
     """
 
     pass
