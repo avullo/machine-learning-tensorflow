@@ -7,12 +7,16 @@ from __future__ import absolute_import
 
 import os
 
+# package root dir
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# PDB
+PDB_URL = 'https://files.rcsb.org/download/'
 PDB_DIR = os.path.join( ROOT_DIR, 'data', 'pdb' ) # downloaded PDB files location
-DSSP_DIR = os.path.join( ROOT_DIR, 'data', 'dssp' ) # location of generated DSSP outputs
 
+# DSSP
 DSSP = 'mkdssp' # dssp executable
+DSSP_DIR = os.path.join( ROOT_DIR, 'data', 'dssp' ) # location of generated DSSP outputs
 
 class SSConfig(object):
     """
