@@ -23,7 +23,7 @@ def download_file(url, dest=None):
     scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
     filename = os.path.basename(path)
     if not filename:
-        filename = 'downloaded.file'
+        raise "Couldn't get filename from URL"
     if dest:
         filename = os.path.join(dest, filename)
 

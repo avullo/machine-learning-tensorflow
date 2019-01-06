@@ -1,6 +1,6 @@
 """
-Define configuration data, utilities and classes to support
-the generation of a dataset and the learning problem. 
+Define configuration data, utilities and classes to support the 
+generation of a dataset and the definition of the learning problem. 
 """
 
 from __future__ import absolute_import
