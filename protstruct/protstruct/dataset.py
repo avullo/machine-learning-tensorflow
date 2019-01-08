@@ -8,18 +8,20 @@ from __future__ import print_function
 
 from Bio.PDB import PDBParser, DSSP
 from protstruct.utils import download_file
-from protstruct.config import PDB_URL, PDB_DIR
+import protstruct.config as config # import PDB_URL, PDB_DIR, DSSP
 
 import os
 import tensorflow as tf
 
+import pprint
+
 def get_pdb_file( pdb_id, compressed = False ):
 
-    if not tf.gfile.Exists( PDB_DIR ):
-        tf.gfile.MakeDirs( PDB_DIR )
+    if not tf.gfile.Exists( config.PDB_DIR ):
+        tf.gfile.MakeDirs( config.PDB_DIR )
 
-    pdb_file = os.path.join( PDB_URL, pdb_id )
-    local_pdb_file = os.path.join( PDB_DIR, pdb_id )
+    pdb_file = os.path.join( config.PDB_URL, pdb_id )
+    local_pdb_file = os.path.join( config.PDB_DIR, pdb_id )
 
     pdb_file += '.pdb'
     local_pdb_file += '.pdb'
@@ -31,14 +33,14 @@ def get_pdb_file( pdb_id, compressed = False ):
     if tf.gfile.Exists( local_pdb_file ):
         return local_pdb_file
 
-    return download_file( pdb_file, PDB_DIR )
+    return download_file( pdb_file, config.PDB_DIR )
 
 def extract_chain_data( pdb_file, chain ):
     try:
-        end = pdb_file.index('.')
-        pdb_id = pdb_file[:end]
+        end = os.path.basename(pdb_file).index('.')
+        pdb_id = os.path.basename(pdb_file)[:end]
     except ValueError:
-        pdb_id = pdb_file
+        pdb_id = os.path.basename(pdb_file)
 
     p = PDBParser()
     
@@ -49,21 +51,23 @@ def extract_chain_data( pdb_file, chain ):
     structure = p.get_structure(pdb_id, pdb_file)
     
     model = structure[0]
-    dssp = DSSP(model, pdb_file, dssp=config.DSSP)
+    dssp = DSSP(model, pdb_file)
 
-    chain = []
+    chain_data = []
+
     for dssp_key in filter(lambda t: t[0] == chain, dssp.keys()):
         residue_info = dssp[dssp_key]
         AA, SS, SA, Phi, Psi = residue_info[1:6]
-        chain.append( { 'aa':AA, 'ss':SS, 'sa':SA, 'phi':Phi, 'psi':Psi } )
+        chain_data.append( { 'aa':AA, 'ss':SS, 'sa':SA, 'phi':Phi, 'psi':Psi } )
 
-    return chain
+    return chain_data
 
 #
 # TODO
 # - logging
 # - exception handling, e.g. DSSP may not run for certain PDBs 
 # - multiprocessing
+# - write to HD5
 #
 def process_pdbs(file_list, out):
     with open( game_file, 'r' ) as f:
