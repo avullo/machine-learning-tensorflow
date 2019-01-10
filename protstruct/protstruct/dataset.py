@@ -69,14 +69,10 @@ def extract_chain_data( pdb_file, chain ):
 # - multiprocessing
 # - write to HD5
 #
-def process_pdbs(file_list, out):
-    with open( game_file, 'r' ) as f:
-        for pdb_chain in f:
-            # each row is PDB_ID + CHAIN_ID
-            pdb_id, chain = pdb_chain[:4], pdb_chain[4]
+def process_pdbs(pdb_list, out):
+    for pdb_id, chain in pdb_list:
+        pdb_file = get_pdb_file( pdb_id + '.pdb' )
+        chain_data = extract_chain_data( pdb_file, chain )
 
-            pdb_file = get_pdb_file( pdb_id + '.pdb' )
-            chain_data = extract_chain_data( pdb_file, chain )
-
-            # TODO: append chain data to file, no with multiprocessing
+        # TODO: append chain data to file, no with multiprocessing
             
