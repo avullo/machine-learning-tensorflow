@@ -11,12 +11,31 @@ from protstruct.utils import download_file
 import protstruct.config as config # import PDB_URL, PDB_DIR, DSSP
 
 import os
+import h5py
 import tensorflow as tf
 
 import pprint
 
-def get_pdb_file( pdb_id, compressed = False ):
+def create_input_list(fname):
+    """
+    create a list of tuples (pdb_id, chain) from a text file
+    """
+    pdb_list = []
+    with open(pdb_list_fname, 'r') as f:
+        for record in f:
+            pdb_id, chain = record[:-1], record[-1]
 
+            # check PDB ID and chain are valid
+            if not pdb_id.isalnum() or len(pdb_id) != 4 or not chain.isalpha() or len(chain) != 1:
+                continue
+
+            pdb_list.append((pdb_id.lower(), chain.lower()))
+
+    return pdb_list
+
+def get_pdb_file( pdb_id, compressed = False ):
+    # TODO: lower pdb_id
+    
     if not tf.gfile.Exists( config.PDB_DIR ):
         tf.gfile.MakeDirs( config.PDB_DIR )
 
@@ -54,6 +73,7 @@ def extract_chain_data( pdb_file, chain ):
     dssp = DSSP(model, pdb_file)
 
     chain_data = []
+    chain = chain.upper() # DSSP records chains in upper case (TODO: always?)
 
     for dssp_key in filter(lambda t: t[0] == chain, dssp.keys()):
         residue_info = dssp[dssp_key]
@@ -62,17 +82,4 @@ def extract_chain_data( pdb_file, chain ):
 
     return chain_data
 
-#
-# TODO
-# - logging
-# - exception handling, e.g. DSSP may not run for certain PDBs 
-# - multiprocessing
-# - write to HD5
-#
-def process_pdbs(pdb_list, out):
-    for pdb_id, chain in pdb_list:
-        pdb_file = get_pdb_file( pdb_id + '.pdb' )
-        chain_data = extract_chain_data( pdb_file, chain )
-
-        # TODO: append chain data to file, no with multiprocessing
             
