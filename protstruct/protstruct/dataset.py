@@ -16,25 +16,25 @@ import tensorflow as tf
 
 import pprint
 
-def create_input_list(fname):
+def create_input_list(pdb_list_fname):
     """
     create a list of tuples (pdb_id, chain) from a text file
     """
     pdb_list = []
     with open(pdb_list_fname, 'r') as f:
-        for record in f:
+        for record in f.read().splitlines():
             pdb_id, chain = record[:-1], record[-1]
 
             # check PDB ID and chain are valid
             if not pdb_id.isalnum() or len(pdb_id) != 4 or not chain.isalpha() or len(chain) != 1:
                 continue
 
-            pdb_list.append((pdb_id.lower(), chain.lower()))
+            pdb_list.append((pdb_id, chain))
 
     return pdb_list
 
 def get_pdb_file( pdb_id, compressed = False ):
-    # TODO: lower pdb_id
+    pdb_id = pdb_id.lower()
     
     if not tf.gfile.Exists( config.PDB_DIR ):
         tf.gfile.MakeDirs( config.PDB_DIR )
@@ -78,8 +78,45 @@ def extract_chain_data( pdb_file, chain ):
     for dssp_key in filter(lambda t: t[0] == chain, dssp.keys()):
         residue_info = dssp[dssp_key]
         AA, SS, SA, Phi, Psi = residue_info[1:6]
-        chain_data.append( { 'aa':AA, 'ss':SS, 'sa':SA, 'phi':Phi, 'psi':Psi } )
+        chain_data.append( { 'AA':AA, 'SS':SS, 'SA':SA, 'Phi':Phi, 'Psi':Psi } )
 
     return chain_data
 
+#
+# TODO
+# - logging
+# - exception handling:
+#   - DSSP may not run for certain PDBs
+#   - discontinuous chain (PDBConstructionWarning)
+# - multiprocessing?
+#
+def process_pdbs(pdb_list, out_filename, min_chain_len=30):
+    with h5py.File(out_filename, 'w') as f:
+        for pdb_id, chain in pdb_list:
+            try:
+                # chain data dedcated group
+                grp = f.create_group(pdb_id + '/' + chain)
+                data = extract_chain_data( get_pdb_file( pdb_id ), chain )
+
+                # filter out short chains
+                if len(data) < min_chain_len:
+                    grp.attrs['status'] = 0
+                    continue
+
+                # special type to write variable length strings to HDF5
+                dt = h5py.special_dtype(vlen=bytes)
+
+                # AA/SS/SA/Phi/Psi datasets
+                # TODO: phi/psi datasets
+                grp.create_dataset('AA', (1,), dtype=dt, data=''.join(map(lambda r: r['AA'], data)))
+                grp.create_dataset('SS', (1,), dtype=dt, data=''.join(map(lambda r: r['SS'], data)))
+                grp.create_dataset('SA',  data=list(map(lambda r: r['SA'], data)))
+                grp.create_dataset('Phi', data=list(map(lambda r: r['Phi'], data)))
+                grp.create_dataset('Psi', data=list(map(lambda r: r['Psi'], data)))
+
+                grp.attrs['status'] = 1
+
+            except:
+                grp.attrs['status'] = 0
             
+        # TODO: append chain data to file, no with multiprocessing
